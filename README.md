@@ -7,11 +7,17 @@
 
 ### Key Features 🌟
 
-- **Real-Time Kaspa Price Tracking**: Uses the CoinGecko API to track Kaspa cryptocurrency prices in USD.
+- **Real-Time Kaspa Price Tracking**: Uses the CoinGecko API to track Kaspa cryptocurrency prices in USD. 
 - **Price Change Alerts**: Notifies users when Kaspa's price changes by more than 5%.
 - **Price Recording**: Stores Kaspa price data in a CSV file for easy access.
 - **ATH (All-Time High) Management**: Records and alerts users when Kaspa reaches new historical highs.
 - **Integrated Discord Commands**: Allows users to fetch the current price of Kaspa directly through Discord commands.
+
+---
+
+### Commands
+
+- `!kas`: Uses the CoinGecko API to track Kaspa cryptocurrency prices in USD.
 
 ---
 
