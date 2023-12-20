@@ -1,5 +1,6 @@
 # 🚀 KaspaPriceBot v1.0.0 🚀
 
+## Discord Bot for Tracking Kaspa Price
 ## Author: TILK
 
 ---
