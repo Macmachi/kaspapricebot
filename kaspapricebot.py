@@ -2,7 +2,7 @@
 *
 * PROJET : KaspaPriceBot
 * AUTEUR : Arnaud 
-* VERSIONS : 1.0.1
+* VERSIONS : 1.0.2
 * NOTES : None
 *
 '''
@@ -17,11 +17,18 @@ import datetime
 import aiohttp
 import configparser
 import json
+import sys
 
 # Configuration and initialization
 config = configparser.ConfigParser()
 config.read('config.ini')
 DISCORD_BOT_TOKEN = config['KEYS']['DISCORD_BOT_TOKEN']
+
+# Utilisez script_dir pour définir le chemin du fichier discord_channels.json
+script_dir = os.path.dirname(os.path.realpath(__file__))
+os.chdir(script_dir)
+config_path = os.path.join(script_dir, 'config.ini')
+discord_channels_path = os.path.join(script_dir, 'discord_channels.json')
 
 # Initialize the intents variable
 intents = discord.Intents.default()
@@ -136,27 +143,31 @@ async def check_kas_price_change():
 async def send_kas_price_alert(latest_price, old_price, old_time, latest_time, percentage_change):
     total_minutes_diff = int((latest_time - old_time).total_seconds() / 60)
     message = f"KAS: Price change of {percentage_change}% over {total_minutes_diff} min. New price: ${latest_price}, Old price: ${old_price}"
-    try:
-        with open('chat_ids.json', 'r') as file:
-            chat_ids = json.load(file)
-    except FileNotFoundError:
-        log_message("chat_ids.json file for KAS not found. Creating a new file.")
-        chat_ids = []
-        with open('chat_ids.json', 'w') as file:
-            json.dump(chat_ids, file)
+    
+    log_message("Lecture des IDs de channel pour Discord...")
 
-    log_message(f"Chat IDs for KAS loaded from chat_ids.json file: {chat_ids}")
-
-    for chat_id in chat_ids:
-        try:
-            await bot.send_message(chat_id=chat_id, content=message)
-        except discord.Forbidden:
-            log_message(f"The bot is blocked by user {chat_id} for KAS alerts.")
-            continue
-        except discord.HTTPException as e:
-            log_message(f"HTTPException while sending KAS message to {chat_id}: {e}")
-        except Exception as e:
-            log_message(f"Unexpected error while sending KAS message to {chat_id}: {e}")
+    if os.path.exists(discord_channels_path):
+        with open(discord_channels_path, "r") as file:
+            channels = json.load(file)
+        
+        for channel_id in channels:
+            channel = bot.get_channel(channel_id)
+            if channel:
+                try:
+                    await channel.send(message)
+                except discord.Forbidden:
+                    # Évite de log si le bot a été bloqué par des utilisateurs...
+                    continue 
+                except discord.NotFound as e:
+                    log_message(f"Erreur: Canal Discord {channel_id} non trouvé : {e}")
+                except discord.HTTPException as e:
+                    log_message(f"Erreur HTTP lors de l'envoi du message au canal Discord {channel_id}: {e}")
+                except discord.InvalidArgument as e:
+                    log_message(f"Erreur: Argument invalide pour le canal Discord {channel_id}: {e}")
+                except Exception as e:
+                    log_message(f"Erreur inattendue lors de l'envoi du message à Discord : {e}")
+    else:
+        log_message("Erreur: Le fichier discord_channels.json n'a pas été trouvé.")
 
     # Update the CSV file for KAS
     log_message(f"Removing data from the kas csv except the latest price")
@@ -177,21 +188,30 @@ def record_new_kas_ath(ath_price):
 
 '''MANAGE ATH ALERTS'''
 
-# Modify the send_ath_alert function to handle both AVAX and BTC
 async def send_ath_alert(message, token_type):
-    chat_ids_file = 'chat_ids.json'
+    log_message("Lecture des IDs de channel pour Discord...")
 
-    try:
-        with open(chat_ids_file, 'r') as file:
-            chat_ids = json.load(file)
-        # Send the message to each chat_id
-        for chat_id in chat_ids:
-            try:
-                await bot.send_message(chat_id=chat_id, content=message)
-            except Exception as e:
-                log_message(f"Error sending ATH alert for {token_type} to {chat_id}: {e}")  # No need to pass the file name anymore
-    except FileNotFoundError:
-        log_message(f"The file {chat_ids_file} was not found.")
+    if os.path.exists(discord_channels_path):
+        with open(discord_channels_path, "r") as file:
+            channels = json.load(file)
+        
+        for channel_id in channels:
+            channel = bot.get_channel(channel_id)
+            if channel:
+                try:
+                    await channel.send(message)
+                except discord.Forbidden:
+                    continue
+                except discord.NotFound as e:
+                    log_message(f"Erreur: Canal Discord {channel_id} non trouvé : {e}")
+                except discord.HTTPException as e:
+                    log_message(f"Erreur HTTP lors de l'envoi du message au canal Discord {channel_id}: {e}")
+                except discord.InvalidArgument as e:
+                    log_message(f"Erreur: Argument invalide pour le canal Discord {channel_id}: {e}")
+                except Exception as e:
+                    log_message(f"Erreur inattendue lors de l'envoi du message à Discord : {e}")
+    else:
+        log_message("Erreur: Le fichier discord_channels.json n'a pas été trouvé.")
 
 '''GET PRICE FROM CSV ON COMMAND'''
 
@@ -214,9 +234,41 @@ def get_latest_price_from_csv(filename):
 '''DISCORD COMMANDS'''
 
 @bot.command()
+async def startkas(ctx):
+    try:
+        log_message("startkas command received")
+        if not os.path.exists(discord_channels_path):
+            with open(discord_channels_path, "w") as file:
+                json.dump([], file)
+                
+        with open(discord_channels_path, "r") as file:
+            channels = json.load(file)
+
+        if ctx.channel.id not in channels:
+            channels.append(ctx.channel.id)
+            with open(discord_channels_path, "w") as file:
+                json.dump(channels, file)
+            await ctx.send("This channel has been registered.")
+            log_message(f"Channel {ctx.channel.id} has been registered.")
+        else:
+            await ctx.send("This channel is already registered.")
+            log_message(f"Channel {ctx.channel.id} is already registered.")
+    except FileNotFoundError:
+        log_message("Error: The discord_channels.json file was not found or could not be created.")
+    except Exception as e:
+        log_message(f"Error executing !register: {e}")
+
+@bot.command()
 async def kas(ctx):
-    price = get_latest_price_from_csv(CSV_FILENAME_KAS)
-    try:    
+    try:
+        with open(discord_channels_path, "r") as file:
+            channels = json.load(file)
+
+        if ctx.channel.id not in channels:
+            await ctx.send("This channel is not registered. Please use the !startkas command to register this channel.")
+            return
+
+        price = get_latest_price_from_csv(CSV_FILENAME_KAS)
         if price is not None:
             log_message("Fetching KAS price through CSV")
             await ctx.send(f"The current price of KAS is ${price}")
@@ -224,6 +276,9 @@ async def kas(ctx):
             log_message("Fetching KAS price through API")
             price = await fetch_kas_price()  # Fallback to API if necessary
             await ctx.send(f"The current price of KAS is ${price}")
+    except FileNotFoundError:
+        await ctx.send("Error: The discord_channels.json file was not found or could not be created.")
+        log_message("Error: The discord_channels.json file was not found or could not be created.")
     except Exception as e:
         print(f"An error occurred: {e}")
         log_message(f"An error occurred: {e}")
@@ -237,6 +292,14 @@ async def schedule_jobs():
 async def on_ready():
     log_message(f'Logged in as {bot.user.name}')
     schedule_jobs.start()
+
+@bot.event
+async def on_error(event, *args, **kwargs):
+    log_message(f"Erreur dans l'événement {event} : {sys.exc_info()[1]}")    
+
+@bot.event
+async def on_command_error(ctx, error):
+    log_message(f"Erreur avec la commande {ctx.command}: {error}")    
 
 if __name__ == "__main__":
     bot.run(DISCORD_BOT_TOKEN)
