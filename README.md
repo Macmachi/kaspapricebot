@@ -1,4 +1,4 @@
-# 🚀 KaspaPriceBot v1.0.0 🚀
+# 🚀 KaspaPriceBot 🚀
 
 ## Discord Bot for Tracking Kaspa Price
 ## Author: TILK
@@ -17,6 +17,7 @@
 
 ### Commands
 
+- After adding the bot to your Discord channel, use the command `!startkas` to register the ID of the Discord channel where the bot can send messages.
 - `!kas`: Uses the CoinGecko API to track Kaspa cryptocurrency prices in USD.
 
 ---
