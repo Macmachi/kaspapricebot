@@ -2,7 +2,7 @@
 *
 * PROJET : KaspaPriceBot
 * AUTEUR : Arnaud 
-* VERSIONS : 1.0.0
+* VERSIONS : 1.0.1
 * NOTES : None
 *
 '''
@@ -199,7 +199,15 @@ def get_latest_price_from_csv(filename):
     if not os.path.exists(filename) or os.path.getsize(filename) == 0:
         log_message(f"No latest price in CSV for {filename}")
         return None  # Return None if the file doesn't exist or is empty
+
     df = pd.read_csv(filename, sep=';', decimal=',')
+    # Supprimer les lignes où 'price' est NaN
+    df = df.dropna(subset=['price'])
+
+    if df.empty:
+        log_message(f"No valid price data in CSV for {filename}")
+        return None
+
     latest_price = df.iloc[-1]['price']
     return latest_price
 
