@@ -2,7 +2,7 @@
 *
 * PROJET : KaspaPriceBot
 * AUTEUR : Arnaud 
-* VERSIONS : 1.0.2
+* VERSIONS : 1.0.3
 * NOTES : None
 *
 '''
@@ -137,7 +137,7 @@ async def check_kas_price_change():
             log_message(f"KAS: Significant price change of {change*100:.2f}% detected.")
             old_time = pd.to_datetime(row['time'])
             percentage_change = round(change * 100, 2)
-            await send_kas_price_alert(latest_price, old_price, old_time, latest_time, percentage_change, "KAS")
+            await send_kas_price_alert(latest_price, old_price, old_time, latest_time, percentage_change)
             break
 
 async def send_kas_price_alert(latest_price, old_price, old_time, latest_time, percentage_change):
