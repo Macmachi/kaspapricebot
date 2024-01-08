@@ -43,7 +43,7 @@ Love the project? Here’s how you can contribute:
 ### 💖 Support the Project
 
 If you appreciate KaspaPriceBot and want to support ongoing development:
-- **Donation Address**: kaspa:qpyn3vjwsnqqfapcmc7df49typf8gcfnw8rdeh0d6kt2gm58e0ma69nqnhhw4
+- **Donation Address**: kaspa:qqngpnpwrfhexgu8kzk3lteu5fakh6fylmt53gt7qwtf4vttjyvfyrnr8shwa
 - All contributions, big or small, are greatly appreciated!
 
 ---
