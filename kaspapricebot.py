@@ -2,16 +2,14 @@
 *
 * PROJET : KaspaPriceBot
 * AUTEUR : Arnaud 
-* VERSIONS : 1.0.3
+* VERSIONS : 1.0.4
 * NOTES : None
 *
 '''
 import os
 import pandas as pd
 import asyncio
-# Replace this import
 import discord
-# With this import
 from discord.ext import commands, tasks
 import datetime
 import aiohttp
@@ -29,6 +27,7 @@ script_dir = os.path.dirname(os.path.realpath(__file__))
 os.chdir(script_dir)
 config_path = os.path.join(script_dir, 'config.ini')
 discord_channels_path = os.path.join(script_dir, 'discord_channels.json')
+LAST_ATH_MESSAGE_ID_FILE = "last_ath_message_id.txt"
 
 # Initialize the intents variable
 intents = discord.Intents.default()
@@ -194,12 +193,29 @@ async def send_ath_alert(message, token_type):
     if os.path.exists(discord_channels_path):
         with open(discord_channels_path, "r") as file:
             channels = json.load(file)
-        
+
         for channel_id in channels:
             channel = bot.get_channel(channel_id)
             if channel:
+                # Supprimez le dernier message d'ATH si présent
+                if os.path.exists(LAST_ATH_MESSAGE_ID_FILE):
+                    with open(LAST_ATH_MESSAGE_ID_FILE, "r") as file:
+                        last_message_id = file.read().strip()
+                        if last_message_id:
+                            try:
+                                last_message = await channel.fetch_message(int(last_message_id))
+                                await last_message.delete()
+                                log_message(f"Message ATH précédent supprimé: {last_message_id}")
+                            except discord.NotFound:
+                                log_message("Le message ATH précédent n'a pas été trouvé et n'a pas pu être supprimé.")
+                            except discord.HTTPException as e:
+                                log_message(f"Erreur lors de la suppression du message ATH : {e}")
+
                 try:
-                    await channel.send(message)
+                    # Envoyez le nouveau message d'ATH et enregistrez son ID
+                    sent_message = await channel.send(message)
+                    with open(LAST_ATH_MESSAGE_ID_FILE, "w") as file:
+                        file.write(str(sent_message.id))
                 except discord.Forbidden:
                     continue
                 except discord.NotFound as e:
