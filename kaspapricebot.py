@@ -1,8 +1,8 @@
 '''
 *
 * PROJET : KaspaPriceBot
-* AUTEUR : Arnaud 
-* VERSIONS : 1.0.4
+* AUTEUR : Rymentz.com 
+* VERSIONS : 1.0.5
 * NOTES : None
 *
 '''
@@ -301,8 +301,11 @@ async def kas(ctx):
     
 @tasks.loop(minutes=1)
 async def schedule_jobs():
-    await record_kas_price()
-    await check_kas_price_change()
+    try:
+        await record_kas_price()
+        await check_kas_price_change()
+    except Exception as e:
+        log_message(f"Error in scheduled job: {e}")
 
 @bot.event
 async def on_ready():
